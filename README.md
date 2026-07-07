@@ -1,349 +1,159 @@
 # Zero-Downtime Deployment Checklist
 
-A practical zero-downtime deployment checklist for DevOps, SRE, platform and backend teams that need safer production releases.
+A practical checklist for DevOps, SRE, platform and backend teams that need safer production releases without relying on memory during deployment windows.
 
-Created by **SteadyOps**:
-https://steadyops.best/
+Use it before rolling, blue/green, canary or feature-flagged deployments for web applications, APIs, Kubernetes services, Docker workloads, Nginx/HAProxy routed apps, PostgreSQL-backed services and background workers.
 
-Related SteadyOps article:
-https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
+## What this checklist protects against
 
-## Why this exists
+- Traffic reaching an instance before it is ready.
+- Rollback commands that exist but were never tested.
+- Database migrations that make rollback unsafe.
+- Load balancer or ingress behavior that keeps sending traffic to terminating instances.
+- Monitoring gaps where customers notice the problem before the team does.
+- Background workers processing incompatible messages after a release.
 
-Zero-downtime deployment is not only about replacing containers or restarting services carefully.
+## Quick release readiness check
 
-A safe production deployment needs:
+Copy this into a release ticket before a production deployment.
 
-* health checks
-* rollback path
-* database migration strategy
-* load balancer behavior
-* observability
-* deployment gates
-* customer-impact validation
-* clear ownership
-
-This checklist helps teams prepare deployment workflows that reduce outage risk and make rollback decisions easier.
-
-## When to use this checklist
-
-Use it before deploying:
-
-* web applications
-* backend APIs
-* Kubernetes services
-* Docker-based services
-* nginx / HAProxy-routed applications
-* PostgreSQL-backed applications
-* services with background workers
-* customer-facing SaaS features
-* high-risk infrastructure changes
-
-## Deployment strategies
-
-| Strategy                  | Best for                  | Risk        | Notes                                        |
-| ------------------------- | ------------------------- | ----------- | -------------------------------------------- |
-| Rolling deployment        | Small stateless services  | Medium      | Requires good readiness checks               |
-| Blue/Green deployment     | Critical web/API services | Low/Medium  | Needs traffic switch and rollback plan       |
-| Canary release            | High-risk changes         | Low/Medium  | Needs strong metrics and progressive traffic |
-| Feature flags             | Product behavior changes  | Low         | Requires flag ownership and cleanup          |
-| Manual maintenance window | Legacy systems            | Medium/High | Not zero-downtime, but sometimes realistic   |
-
-## Pre-deployment checklist
-
-Copy this section into your release ticket or runbook.
-
-````md
-# Zero-Downtime Deployment Checklist
-
-## 1. Release summary
+```md
+## Zero-downtime deployment readiness
 
 Service:
-
 Version:
-
 Deployment owner:
-
 Rollback owner:
-
-Planned deployment time:
-
+Deployment strategy:
 Expected customer impact:
 
-Deployment strategy:
+### Readiness
+- [ ] Health endpoint exists and reflects real readiness.
+- [ ] Readiness probe prevents traffic before the app is ready.
+- [ ] Graceful shutdown and connection draining are configured.
+- [ ] Background workers can stop safely.
+- [ ] Deployment timeout is defined.
 
-- [ ] Rolling
-- [ ] Blue/Green
-- [ ] Canary
-- [ ] Feature flag
-- [ ] Other:
+### Observability
+- [ ] Error rate dashboard is ready.
+- [ ] p95/p99 latency is visible.
+- [ ] Request rate and saturation metrics are visible.
+- [ ] Database connections are visible.
+- [ ] Queue depth is visible.
+- [ ] Logs are searchable.
+- [ ] Deployment event is annotated in monitoring.
 
-## 2. Readiness checks
+### Rollback
+- [ ] Previous version is known.
+- [ ] Previous image/artifact is available.
+- [ ] Rollback command is documented.
+- [ ] Rollback was tested outside production.
+- [ ] Rollback validation steps are defined.
+- [ ] Rollback decision threshold is agreed.
 
-- [ ] Health endpoint exists
-- [ ] Readiness probe is configured
-- [ ] Liveness probe is configured
-- [ ] Startup probe is configured if service starts slowly
-- [ ] Health check validates real dependencies where appropriate
-- [ ] Service does not receive traffic until ready
-- [ ] Graceful shutdown is configured
-- [ ] Existing connections are drained before termination
-- [ ] Background workers shut down safely
-- [ ] Deployment timeout is defined
+### Database changes
+- [ ] Migration is backward-compatible.
+- [ ] Old and new app versions can run at the same time.
+- [ ] Destructive changes are split into a later release.
+- [ ] Locking risk was reviewed.
+- [ ] Backup exists before migration.
+- [ ] Restore or fallback path is known.
 
-## 3. Observability checks
+### Traffic and routing
+- [ ] Nginx, HAProxy or ingress routes are valid.
+- [ ] Upstream health checks are configured.
+- [ ] Connection draining is enabled where possible.
+- [ ] TLS certificate is valid.
+- [ ] DNS changes are not bundled into the release unless planned.
+```
 
-- [ ] Error rate dashboard is ready
-- [ ] p95/p99 latency dashboard is ready
-- [ ] Request rate is visible
-- [ ] Saturation metrics are visible
-- [ ] Database connections are visible
-- [ ] Queue depth is visible
-- [ ] Logs are searchable
-- [ ] Alerts are enabled
-- [ ] Deployment event is annotated in monitoring
+## Deployment strategy notes
 
-## 4. Rollback checks
+| Strategy | Good fit | Main risk |
+| --- | --- | --- |
+| Rolling deployment | Small stateless services | Bad readiness checks can leak traffic to broken pods. |
+| Blue/green deployment | Critical web/API services | Traffic switch and rollback path must be tested. |
+| Canary release | High-risk changes | Requires metrics that show customer impact quickly. |
+| Feature flags | Product behavior changes | Flags need ownership and cleanup. |
+| Maintenance window | Legacy or stateful systems | Not zero-downtime, but sometimes the honest option. |
 
-- [ ] Previous version is known
-- [ ] Previous artifact/image is available
-- [ ] Rollback command is documented
-- [ ] Rollback was tested in staging
-- [ ] Rollback owner is online
-- [ ] Rollback validation steps are defined
-- [ ] Rollback decision threshold is defined
+## Useful commands
 
-## 5. Database migration checks
-
-- [ ] Migration is backward-compatible
-- [ ] Migration does not break the previous application version
-- [ ] Destructive changes are split into a later release
-- [ ] Long-running migration was tested on realistic data volume
-- [ ] Locking risk was reviewed
-- [ ] Backup exists before migration
-- [ ] Restore/fallback plan exists
-- [ ] Application can run during migration
-
-## 6. Load balancer / ingress checks
-
-- [ ] nginx / HAProxy / ingress routes are valid
-- [ ] Upstream health checks are configured
-- [ ] Connection draining is enabled where possible
-- [ ] Timeouts are reviewed
-- [ ] TLS certificate is valid
-- [ ] DNS changes are not part of the release unless planned
-- [ ] Old and new versions can coexist during traffic switch
-
-## 7. Deployment commands
-
-Application deployment:
+Kubernetes rollout:
 
 ```bash
-# Example:
-# kubectl rollout status deployment/my-service
-````
-
-Rollback:
-
-```bash
-# Example:
-# kubectl rollout undo deployment/my-service
+kubectl rollout status deployment/my-service
+kubectl rollout history deployment/my-service
+kubectl rollout undo deployment/my-service
+kubectl rollout undo deployment/my-service --to-revision=3
 ```
 
 Helm rollback:
 
 ```bash
-# Example:
-# helm history my-release
-# helm rollback my-release 12
+helm history my-release
+helm rollback my-release 12
+kubectl get pods -w
 ```
 
 Argo Rollouts:
 
 ```bash
-# Example:
-# kubectl argo rollouts get rollout my-service
-# kubectl argo rollouts abort my-service
-# kubectl argo rollouts promote my-service
-```
-
-## 8. Deployment validation
-
-* [ ] Service returns HTTP 200
-* [ ] Main customer flow works
-* [ ] Error rate is normal
-* [ ] p99 latency is normal
-* [ ] Database connections are stable
-* [ ] Queue depth is not growing unexpectedly
-* [ ] No restart loop
-* [ ] No unusual logs
-* [ ] Business-critical endpoint is tested
-* [ ] Monitoring remains normal for at least 10-15 minutes
-
-## 9. Rollback decision criteria
-
-Rollback if one or more conditions are true:
-
-* [ ] 5xx error rate exceeds agreed threshold
-* [ ] p99 latency is more than 2x baseline
-* [ ] queue depth grows and does not recover
-* [ ] database connection saturation appears
-* [ ] customer-facing flow is broken
-* [ ] security or authentication flow is broken
-* [ ] data corruption is suspected
-* [ ] deployment cannot finish within the agreed window
-
-## 10. Communication
-
-Internal deployment channel:
-
-Deployment started at:
-
-Deployment completed at:
-
-Rollback decision deadline:
-
-Customer communication needed: yes/no
-
-Post-deployment summary:
-
-````
-
-## Kubernetes examples
-
-Check rollout status:
-
-```bash
-kubectl rollout status deployment/my-service
-````
-
-Rollback to previous revision:
-
-```bash
-kubectl rollout undo deployment/my-service
-```
-
-Rollback to specific revision:
-
-```bash
-kubectl rollout undo deployment/my-service --to-revision=3
-```
-
-View rollout history:
-
-```bash
-kubectl rollout history deployment/my-service
-```
-
-Pause rollout:
-
-```bash
-kubectl rollout pause deployment/my-service
-```
-
-Resume rollout:
-
-```bash
-kubectl rollout resume deployment/my-service
-```
-
-## Helm examples
-
-View release history:
-
-```bash
-helm history my-release
-```
-
-Rollback to revision:
-
-```bash
-helm rollback my-release 12
-```
-
-Watch pods after rollback:
-
-```bash
-kubectl get pods -w
-```
-
-## Argo Rollouts examples
-
-Check rollout:
-
-```bash
 kubectl argo rollouts get rollout my-service
-```
-
-Abort rollout:
-
-```bash
 kubectl argo rollouts abort my-service
-```
-
-Promote rollout:
-
-```bash
 kubectl argo rollouts promote my-service
 ```
 
-## Database migration rules
+## Safer database migration pattern
 
-For zero-downtime deployments, avoid migrations that require old and new application versions to switch at the same exact moment.
+Avoid migrations that require old and new application versions to switch at the same exact moment.
 
-Safer approach:
-
-1. Add new nullable column or table.
-2. Deploy application version that writes both old and new formats.
+1. Add a new nullable column or table.
+2. Deploy code that can write both old and new formats.
 3. Backfill data.
-4. Deploy application version that reads the new format.
-5. Remove old column/table in a later release.
+4. Deploy code that reads the new format.
+5. Remove old structures in a later release.
 
-Avoid:
+Avoid dropping columns used by the previous version, long locks during peak traffic, irreversible migrations without backup, and app code that assumes migration completion is instant.
 
-* dropping columns used by the old version
-* renaming columns without compatibility layer
-* long locks during peak traffic
-* irreversible migrations without backup
-* application code that requires migration to finish instantly
+## Rollback decision criteria
 
-## Common zero-downtime deployment mistakes
+Rollback if one or more of these conditions are true:
 
-* Health check returns 200 before the service is actually ready
-* Readiness probe does not check critical dependencies
-* Old and new versions cannot run at the same time
-* Database migration breaks rollback
-* Background workers process incompatible messages
-* Load balancer sends traffic to terminating pods
-* Rollback command exists but was never tested
-* Metrics are checked after customers already complain
-* Deployment owner and rollback owner are the same overloaded person
-* Feature flags are created but never cleaned up
+- 5xx error rate exceeds the agreed threshold.
+- p99 latency is more than 2x the normal baseline.
+- Queue depth grows and does not recover.
+- Database connection saturation appears.
+- A customer-facing flow is broken.
+- Authentication or authorization is broken.
+- Data corruption is suspected.
+- Deployment cannot finish within the agreed window.
 
 ## Post-deployment review
 
-After the deployment, record:
+After the release, record:
 
-* what changed
-* what went well
-* what almost failed
-* whether rollback would have worked
-* whether metrics were enough
-* whether alerts fired correctly
-* what should be automated before the next release
+- what changed
+- what went well
+- what almost failed
+- whether rollback would have worked
+- whether metrics were enough
+- whether alerts fired correctly
+- what should be automated before the next release
 
-## Related SteadyOps resources
+## SteadyOps resources
 
-* DevOps/SRE articles: https://steadyops.best/articles/
-* Zero-Downtime Blue/Green Deployments: https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
-* Kubernetes Rollback Checklist: https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/
-* SteadyOps Platform Story: https://steadyops.best/steadyops-platform-case-study/
+- Website: https://steadyops.best/
+- DevOps/SRE articles: https://steadyops.best/articles/
+- LinkedIn: https://www.linkedin.com/in/yuri-osipov-0876b0254
+- Related article: https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
+- Kubernetes rollback article: https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/
+- SteadyOps platform case study: https://steadyops.best/steadyops-platform-case-study/
 
-## About SteadyOps
+## Related public checklists
 
-SteadyOps provides senior DevOps/SRE support for teams that need reliable production systems, safer deployments, monitoring, incident response and recovery runbooks.
-
-Website: https://steadyops.best/
+- Kubernetes rollback checklist: https://github.com/steadyops-best/kubernetes-rollback-checklist
+- Disaster recovery runbook template: https://github.com/steadyops-best/disaster-recovery-runbook-template
 
 ## License
 
