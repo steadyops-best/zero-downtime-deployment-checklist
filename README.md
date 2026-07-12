@@ -1,160 +1,120 @@
 # Zero-Downtime Deployment Checklist
 
-A practical checklist for DevOps, SRE, platform and backend teams that need safer production releases without relying on memory during deployment windows.
+A reusable release-safety package for rolling, Blue/Green, canary, and feature-flagged deployments. It helps teams define readiness, traffic-switch criteria, rollback safety, database compatibility, observability, and post-release evidence before customer traffic is at risk.
 
-Use it before rolling, blue/green, canary or feature-flagged deployments for web applications, APIs, Kubernetes services, Docker workloads, Nginx/HAProxy routed apps, PostgreSQL-backed services and background workers.
+- Canonical implementation guide: https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
+- Kubernetes rollback guide: https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/
+- SteadyOps resource library: https://steadyops.best/resources/
+- License: MIT
+- Artifact version: 1.0.0
+- Repository reviewed: 2026-07-12
 
-## What this checklist protects against
+## Why this repository exists
 
-- Traffic reaching an instance before it is ready.
-- Rollback commands that exist but were never tested.
-- Database migrations that make rollback unsafe.
-- Load balancer or ingress behavior that keeps sending traffic to terminating instances.
-- Monitoring gaps where customers notice the problem before the team does.
-- Background workers processing incompatible messages after a release.
+“Zero downtime” is not a deployment command or a platform feature. It is an operating result that depends on:
 
-## Quick release readiness check
+- real readiness checks;
+- graceful shutdown and connection draining;
+- enough healthy capacity during the change;
+- observable customer impact and saturation;
+- backward-compatible data and message changes;
+- a known rollback target and decision owner;
+- a controlled traffic switch;
+- technical validation plus a critical business transaction;
+- retained release evidence.
 
-Copy this into a release ticket before a production deployment.
+This repository keeps the compact, forkable artifact separate from the longer explanatory guide so teams can adapt it to their own deployment system without duplicating the canonical article.
 
-```md
-## Zero-downtime deployment readiness
+## Start here
 
-Service:
-Version:
-Deployment owner:
-Rollback owner:
-Deployment strategy:
-Expected customer impact:
+1. Open [`checklist.md`](checklist.md).
+2. Copy it into a release ticket, service repository, runbook, or change-management system.
+3. Replace service names, environments, owners, thresholds, strategy, commands, and business-flow checks.
+4. Confirm old and new versions can coexist during the deployment and rollback window.
+5. Test readiness, shutdown, traffic removal, rollback, and smoke validation in stage or another production-like environment.
+6. Store the completed checklist with deployment logs, dashboards, approvals, and follow-up work.
 
-### Readiness
-- [ ] Health endpoint exists and reflects real readiness.
-- [ ] Readiness probe prevents traffic before the app is ready.
-- [ ] Graceful shutdown and connection draining are configured.
-- [ ] Background workers can stop safely.
-- [ ] Deployment timeout is defined.
+## Repository contents
 
-### Observability
-- [ ] Error rate dashboard is ready.
-- [ ] p95/p99 latency is visible.
-- [ ] Request rate and saturation metrics are visible.
-- [ ] Database connections are visible.
-- [ ] Queue depth is visible.
-- [ ] Logs are searchable.
-- [ ] Deployment event is annotated in monitoring.
+| File | Purpose |
+|---|---|
+| [`checklist.md`](checklist.md) | Compact release contract covering readiness, observability, rollback, traffic switch, and post-deployment checks. |
+| [`CITATION.cff`](CITATION.cff) | Citation metadata for internal release standards and derived runbooks. |
+| [`LICENSE`](LICENSE) | MIT license for reuse and adaptation. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Rules for safe, practical improvements. |
 
-### Rollback
-- [ ] Previous version is known.
-- [ ] Previous image/artifact is available.
-- [ ] Rollback command is documented.
-- [ ] Rollback was tested outside production.
-- [ ] Rollback validation steps are defined.
-- [ ] Rollback decision threshold is agreed.
+## Release-safety model
 
-### Database changes
-- [ ] Migration is backward-compatible.
-- [ ] Old and new app versions can run at the same time.
-- [ ] Destructive changes are split into a later release.
-- [ ] Locking risk was reviewed.
-- [ ] Backup exists before migration.
-- [ ] Restore or fallback path is known.
+### 1. Define the release contract
 
-### Traffic and routing
-- [ ] Nginx, HAProxy or ingress routes are valid.
-- [ ] Upstream health checks are configured.
-- [ ] Connection draining is enabled where possible.
-- [ ] TLS certificate is valid.
-- [ ] DNS changes are not bundled into the release unless planned.
-```
+Name the service, version, strategy, deployment owner, rollback owner, decision window, expected customer impact, and the signals that can stop the release.
 
-## Deployment strategy notes
+### 2. Prove serving readiness
 
-| Strategy | Good fit | Main risk |
-| --- | --- | --- |
-| Rolling deployment | Small stateless services | Bad readiness checks can leak traffic to broken pods. |
-| Blue/green deployment | Critical web/API services | Traffic switch and rollback path must be tested. |
-| Canary release | High-risk changes | Requires metrics that show customer impact quickly. |
-| Feature flags | Product behavior changes | Flags need ownership and cleanup. |
-| Maintenance window | Legacy or stateful systems | Not zero-downtime, but sometimes the honest option. |
+A process being alive is not enough. Readiness should represent the ability to serve the intended traffic with required dependencies available. Liveness must not turn dependency degradation into a restart loop.
 
-## Useful commands
+### 3. Protect compatibility
 
-Kubernetes rollout:
+Old and new versions may overlap during rolling, Blue/Green, or canary deployment. Database schema, queue messages, cache entries, API contracts, feature flags, and background workers must remain compatible through that overlap and the rollback window.
 
-```bash
-kubectl rollout status deployment/my-service
-kubectl rollout history deployment/my-service
-kubectl rollout undo deployment/my-service
-kubectl rollout undo deployment/my-service --to-revision=3
-```
+### 4. Switch traffic using observable criteria
 
-Helm rollback:
+Validate the candidate environment before routing normal traffic. After the switch, watch error rate, p95/p99 latency, request rate, saturation, queue depth, database pressure, and a real customer transaction.
 
-```bash
-helm history my-release
-helm rollback my-release 12
-kubectl get pods -w
-```
+### 5. Keep reversal available
 
-Argo Rollouts:
+Retain the previous environment or artifact until the decision window closes. A rollback path that disappears immediately after traffic switch is not a reliable safety control.
 
-```bash
-kubectl argo rollouts get rollout my-service
-kubectl argo rollouts abort my-service
-kubectl argo rollouts promote my-service
-```
+## Strategy fit
 
-## Safer database migration pattern
+| Strategy | Useful when | Primary operational risk |
+|---|---|---|
+| Rolling | Stateless or disruption-tolerant workloads | Bad readiness or capacity loss exposes broken instances. |
+| Blue/Green | Critical web and API services needing fast reversal | Traffic switch, state, and environment drift are not validated. |
+| Canary | Risky changes with strong telemetry | Metrics do not reveal customer impact quickly enough. |
+| Feature flags | Behavior can be separated from deployment | Flags lack ownership, cleanup, or safe defaults. |
+| Maintenance window | Legacy or tightly coupled systems | Calling downtime “zero downtime” hides the real customer plan. |
 
-Avoid migrations that require old and new application versions to switch at the same exact moment.
+## Minimum release evidence
 
-1. Add a new nullable column or table.
-2. Deploy code that can write both old and new formats.
-3. Backfill data.
-4. Deploy code that reads the new format.
-5. Remove old structures in a later release.
+- service, version, image digest, chart or artifact identifier;
+- deployment strategy and owners;
+- readiness and graceful-shutdown validation;
+- capacity and fault-domain state;
+- migration and message compatibility decision;
+- stop conditions and decision timestamps;
+- traffic-switch and endpoint state;
+- error, latency, saturation, queue, and database observations;
+- critical business transaction result;
+- rollback target and validation outcome;
+- follow-up actions with owners and deadlines.
 
-Avoid dropping columns used by the previous version, long locks during peak traffic, irreversible migrations without backup, and app code that assumes migration completion is instant.
+## Safety boundaries
 
-## Rollback decision criteria
+- Do not use fixed example thresholds as universal SLOs.
+- Do not combine irreversible schema removal with a release that may need rollback.
+- Do not send traffic to a new environment before technical and business smoke checks pass.
+- Do not remove the old environment before the agreed decision window closes.
+- Do not retry unsafe, non-idempotent operations blindly during a partial rollout.
+- Keep secrets, private endpoints, topology, and customer data out of public forks.
+- Use an honest maintenance window when architecture cannot support a safe online change.
 
-Rollback if one or more of these conditions are true:
-
-- 5xx error rate exceeds the agreed threshold.
-- p99 latency is more than 2x the normal baseline.
-- Queue depth grows and does not recover.
-- Database connection saturation appears.
-- A customer-facing flow is broken.
-- Authentication or authorization is broken.
-- Data corruption is suspected.
-- Deployment cannot finish within the agreed window.
-
-## Post-deployment review
-
-After the release, record:
-
-- what changed
-- what went well
-- what almost failed
-- whether rollback would have worked
-- whether metrics were enough
-- whether alerts fired correctly
-- what should be automated before the next release
-
-## SteadyOps resources
-
-- Website: https://steadyops.best/
-- DevOps/SRE articles: https://steadyops.best/articles/
-- LinkedIn: https://www.linkedin.com/in/yuri-osipov-0876b0254
-- Related article: https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
-- Kubernetes rollback article: https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/
-- SteadyOps platform case study: https://steadyops.best/steadyops-platform-case-study/
-
-## Related public checklists
+## Related SteadyOps resources
 
 - Kubernetes rollback checklist: https://github.com/steadyops-best/kubernetes-rollback-checklist
 - Disaster recovery runbook template: https://github.com/steadyops-best/disaster-recovery-runbook-template
+- Kubernetes production-readiness guide: https://steadyops.best/articles/kubernetes-production-readiness-checklist/
+- Kubernetes observability guide: https://steadyops.best/articles/kubernetes-observability-best-practices-for-sre-teams/
+- Production reliability cases: https://steadyops.best/reliability-cases/
+
+## Citation
+
+GitHub can render citation metadata from [`CITATION.cff`](CITATION.cff). Retain the source repository and canonical guide when incorporating the checklist into an internal deployment standard.
+
+## Contributing
+
+Corrections and practical additions are welcome when they connect a real failure mode to a safe check, stop condition, rollback path, or validation step. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
-MIT License. Use, adapt and improve this checklist for your own deployment workflow.
+MIT. Use, adapt, and improve the checklist for your own deployment workflow. Production changes remain the responsibility of the team applying and validating it.
