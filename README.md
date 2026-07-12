@@ -32,13 +32,15 @@ This repository keeps the compact, forkable artifact separate from the longer ex
 3. Replace service names, environments, owners, thresholds, strategy, commands, and business-flow checks.
 4. Confirm old and new versions can coexist during the deployment and rollback window.
 5. Test readiness, shutdown, traffic removal, rollback, and smoke validation in stage or another production-like environment.
-6. Store the completed checklist with deployment logs, dashboards, approvals, and follow-up work.
+6. Complete [`release-evidence-template.md`](release-evidence-template.md) during or immediately after the release.
+7. Store the completed checklist and evidence record with deployment logs, dashboards, approvals, and follow-up work.
 
 ## Repository contents
 
 | File | Purpose |
 |---|---|
 | [`checklist.md`](checklist.md) | Compact release contract covering readiness, observability, rollback, traffic switch, and post-deployment checks. |
+| [`release-evidence-template.md`](release-evidence-template.md) | Release identity, compatibility, traffic timeline, production signals, rollback readiness, and final outcome record. |
 | [`CITATION.cff`](CITATION.cff) | Citation metadata for internal release standards and derived runbooks. |
 | [`LICENSE`](LICENSE) | MIT license for reuse and adaptation. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Rules for safe, practical improvements. |
