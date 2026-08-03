@@ -2,9 +2,9 @@
 
 A reusable release-safety package for rolling, Blue/Green, canary, and feature-flagged deployments. It helps teams define readiness, traffic-switch criteria, rollback safety, database compatibility, observability, and post-release evidence before customer traffic is at risk.
 
-- Canonical implementation guide: https://steadyops.best/articles/zero-downtime-bluegreen-deployments/
-- Kubernetes rollback guide: https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/
-- SteadyOps resource library: https://steadyops.best/resources/
+- [Zero-downtime deployment implementation guide](https://steadyops.best/articles/zero-downtime-bluegreen-deployments/)
+- [Kubernetes rollback checklist for production](https://steadyops.best/articles/kubernetes-rollback-checklist-for-production-deployments/)
+- [SteadyOps release reliability resources](https://steadyops.best/resources/)
 - License: MIT
 - Artifact version: 1.0.0
 - Repository reviewed: 2026-07-12
@@ -103,11 +103,10 @@ Retain the previous environment or artifact until the decision window closes. A 
 
 ## Related SteadyOps resources
 
-- Kubernetes rollback checklist: https://github.com/steadyops-best/kubernetes-rollback-checklist
-- Disaster recovery runbook template: https://github.com/steadyops-best/disaster-recovery-runbook-template
-- Kubernetes production-readiness guide: https://steadyops.best/articles/kubernetes-production-readiness-checklist/
-- Kubernetes observability guide: https://steadyops.best/articles/kubernetes-observability-best-practices-for-sre-teams/
-- Production reliability cases: https://steadyops.best/reliability-cases/
+- [Kubernetes rollback checklist](https://github.com/steadyops-best/kubernetes-rollback-checklist)
+- [Disaster recovery runbook template](https://github.com/steadyops-best/disaster-recovery-runbook-template)
+- [Kubernetes production readiness checklist](https://steadyops.best/articles/kubernetes-production-readiness-checklist/)
+- [Kubernetes observability for SRE teams](https://steadyops.best/articles/kubernetes-observability-best-practices-for-sre-teams/)
 
 ## Citation
 
