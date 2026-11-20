@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          tar -czf zero-downtime-release-kit.tar.gz README.md checklist.md release-evidence-template.md tools examples LICENSE CITATION.cff
+          tar -czf zero-downtime-release-kit.tar.gz README.md docs checklist.md release-evidence-template.md tools examples LICENSE CITATION.cff
           sha256sum zero-downtime-release-kit.tar.gz > zero-downtime-release-kit.tar.gz.sha256
       - uses: softprops/action-gh-release@v2
         with:

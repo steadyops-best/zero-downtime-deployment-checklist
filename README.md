@@ -37,6 +37,10 @@ This repository keeps the compact, forkable artifact separate from the longer ex
 
 For a Blue/Green release, use the [traffic-switch and rollback sequence](https://steadyops.best/articles/zero-downtime-bluegreen-deployments/#traffic-switching-and-rollback-criteria) to fill in your decision window. Record the signal that stops the switch, who can reverse traffic, and when the old environment can be retired.
 
+## Practical article
+
+[Blue/Green traffic switching with a measurable stop decision](docs/blue-green-traffic-switch-decision.md) gives a worked example for advancing, holding, or reversing traffic.
+
 ## Repository contents
 
 | File | Purpose |
