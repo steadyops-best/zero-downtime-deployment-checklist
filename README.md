@@ -35,6 +35,8 @@ This repository keeps the compact, forkable artifact separate from the longer ex
 6. Complete [`release-evidence-template.md`](release-evidence-template.md) during or immediately after the release.
 7. Store the completed checklist and evidence record with deployment logs, dashboards, approvals, and follow-up work.
 
+For a Blue/Green release, use the [traffic-switch and rollback sequence](https://steadyops.best/articles/zero-downtime-bluegreen-deployments/#traffic-switching-and-rollback-criteria) to fill in your decision window. Record the signal that stops the switch, who can reverse traffic, and when the old environment can be retired.
+
 ## Repository contents
 
 | File | Purpose |
